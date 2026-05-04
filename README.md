@@ -39,7 +39,9 @@ com.weather.handler.WeatherLambdaHandler::handleRequest
 
 ```json id="x3m8pq"
 {
-  "city": "Warsaw"
+  "queryStringParameters": {
+    "city": "Warsaw"
+  }
 }
 ```
 
