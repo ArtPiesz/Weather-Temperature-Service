@@ -3,45 +3,58 @@ package com.weather.client;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Scanner;
+public class OpenMeteoClient extends BaseApiClient implements WeatherApiClient {
 
-public class OpenMeteoClient implements WeatherApiClient {
-
+    private static final String WEATHER_API_URL =
+            "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&current=temperature_2m";
 
     private final GeocodingClient geocodingClient;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     public OpenMeteoClient(GeocodingClient geocodingClient) {
         this.geocodingClient = geocodingClient;
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override
     public double getCurrentTemperature(String city) {
-        double[] coordinates = geocodingClient.getCoordinates(city);
-        double latitude = coordinates[0];
-        double longitude = coordinates[1];
-
-        String urlString = String.format(
-                "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&current=temperature_2m",
-                latitude,
-                longitude
-        );
 
         try {
-            HttpURLConnection connection = (HttpURLConnection) new URL(urlString).openConnection();
-            connection.setRequestMethod("GET");
+            double[] coordinates = geocodingClient.getCoordinates(city);
 
-            Scanner scanner = new Scanner(connection.getInputStream());
-            String response = scanner.useDelimiter("\\A").next();
-            scanner.close();
+            double latitude = coordinates[0];
+            double longitude = coordinates[1];
 
-            JsonNode root = objectMapper.readTree(response);
-            return root.path("current").path("temperature_2m").asDouble();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to fetch weather data", e);
+            String requestUrl = String.format(
+                    WEATHER_API_URL,
+                    latitude,
+                    longitude
+            );
+
+            String responseBody = executeGetRequest(
+                    requestUrl,
+                    "Failed to fetch weather data for city: " + city
+            );
+
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+            JsonNode currentNode = rootNode.path("current");
+
+            if (currentNode.isMissingNode()
+                    || currentNode.path("temperature_2m").isMissingNode()) {
+
+                throw new RuntimeException(
+                        "Weather API response missing temperature data for city: "
+                                + city
+                );
+            }
+
+            return currentNode.path("temperature_2m").asDouble();
+
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "Failed to fetch current temperature for city: " + city,
+                    e
+            );
         }
     }
 }

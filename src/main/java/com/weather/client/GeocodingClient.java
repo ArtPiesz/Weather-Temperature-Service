@@ -3,14 +3,10 @@ package com.weather.client;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Scanner;
 
-public class GeocodingClient {
+public class GeocodingClient extends BaseApiClient {
 
     private static final String GEOCODING_API_URL =
             "https://geocoding-api.open-meteo.com/v1/search?name=%s&count=1";
@@ -22,31 +18,27 @@ public class GeocodingClient {
     }
 
     /**
-     * Returns coordinates for a given city:
+     * Returns coordinates:
      * [0] = latitude
      * [1] = longitude
      */
     public double[] getCoordinates(String city) {
+
         try {
-            String encodedCity = URLEncoder.encode(city, StandardCharsets.UTF_8);
-            String requestUrl = String.format(GEOCODING_API_URL, encodedCity);
+            String encodedCity = URLEncoder.encode(
+                    city,
+                    StandardCharsets.UTF_8
+            );
 
-            HttpURLConnection connection =
-                    (HttpURLConnection) new URL(requestUrl).openConnection();
+            String requestUrl = String.format(
+                    GEOCODING_API_URL,
+                    encodedCity
+            );
 
-            connection.setRequestMethod("GET");
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(5000);
-
-            int responseCode = connection.getResponseCode();
-
-            if (responseCode != 200) {
-                throw new RuntimeException(
-                        "Failed to fetch geocoding data. HTTP error code: " + responseCode
-                );
-            }
-
-            String responseBody = readResponse(connection);
+            String responseBody = executeGetRequest(
+                    requestUrl,
+                    "Failed to fetch geocoding data for city: " + city
+            );
 
             JsonNode rootNode = objectMapper.readTree(responseBody);
             JsonNode resultsNode = rootNode.path("results");
@@ -62,16 +54,11 @@ public class GeocodingClient {
 
             return new double[]{latitude, longitude};
 
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to fetch coordinates for city: " + city, e);
-        }
-    }
-
-    private String readResponse(HttpURLConnection connection) throws IOException {
-        try (Scanner scanner = new Scanner(connection.getInputStream())) {
-            return scanner.useDelimiter("\\A").hasNext()
-                    ? scanner.next()
-                    : "";
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "Failed to resolve coordinates for city: " + city,
+                    e
+            );
         }
     }
 }
