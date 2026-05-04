@@ -21,7 +21,7 @@ public class WeatherLambdaHandler implements RequestHandler<APIGatewayProxyReque
         String city = "Wroclaw";
 
         if (queryParams != null && queryParams.get("city") != null) {
-            city = queryParams.get("city");
+            city = queryParams.get("city").trim();
         }
 
         WeatherService weatherService = new WeatherService(
