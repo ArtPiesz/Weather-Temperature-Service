@@ -2,6 +2,7 @@ package com.weather.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.weather.exception.CityNotFoundException;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -44,7 +45,7 @@ public class GeocodingClient extends BaseApiClient {
             JsonNode resultsNode = rootNode.path("results");
 
             if (!resultsNode.isArray() || resultsNode.isEmpty()) {
-                throw new RuntimeException("City not found: " + city);
+                throw new CityNotFoundException(city);
             }
 
             JsonNode firstResult = resultsNode.get(0);
@@ -54,11 +55,11 @@ public class GeocodingClient extends BaseApiClient {
 
             return new double[]{latitude, longitude};
 
+        }
+        catch (CityNotFoundException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException(
-                    "Failed to resolve coordinates for city: " + city,
-                    e
-            );
+            throw new RuntimeException("Failed to resolve coordinates for city: " + city, e);
         }
     }
 }

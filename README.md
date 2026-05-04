@@ -99,6 +99,9 @@ src/main/java/com/weather
 │   ├── WeatherRequest.java
 │   ├── WeatherResponse.java
 │   └── TemperatureCategory.java
+│
+├── exception
+│   └── CityNotFoundException.java
 ```
 
 

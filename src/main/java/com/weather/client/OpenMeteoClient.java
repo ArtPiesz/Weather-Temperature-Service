@@ -2,6 +2,7 @@ package com.weather.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.weather.exception.CityNotFoundException;
 
 public class OpenMeteoClient extends BaseApiClient implements WeatherApiClient {
 
@@ -50,6 +51,9 @@ public class OpenMeteoClient extends BaseApiClient implements WeatherApiClient {
 
             return currentNode.path("temperature_2m").asDouble();
 
+        }
+        catch (CityNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(
                     "Failed to fetch current temperature for city: " + city,
